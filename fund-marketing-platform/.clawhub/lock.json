@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "skills": {
+    "self-improving-agent": {
+      "version": "3.0.13",
+      "installedAt": 1775996015255
+    },
+    "openclaw-tavily-search": {
+      "version": "0.1.0",
+      "installedAt": 1775996017131
+    },
+    "summarize-pro": {
+      "version": "1.0.0",
+      "installedAt": 1775996024913
+    },
+    "pdf-smart-tool-cn": {
+      "version": "1.1.0",
+      "installedAt": 1775996028589
+    },
+    "auto-updater": {
+      "version": "1.0.0",
+      "installedAt": 1775996066798
+    },
+    "openclaw-auto-updater": {
+      "version": "1.0.0",
+      "installedAt": 1775996068832
+    },
+    "openai-whisper": {
+      "version": "1.0.0",
+      "installedAt": 1775996070685
+    },
+    "api-gateway-zito": {
+      "version": "1.0.0",
+      "installedAt": 1775996084072
+    },
+    "feishu-toolkit": {
+      "version": "1.0.0",
+      "installedAt": 1775996091827
+    },
+    "freeride": {
+      "version": "1.0.6",
+      "installedAt": 1775996114162
+    },
+    "remind": {
+      "version": "1.0.0",
+      "installedAt": 1775996116727
+    },
+    "browser-automation-cdp": {
+      "version": "1.0.0",
+      "installedAt": 1775996129829
+    }
+  }
+}

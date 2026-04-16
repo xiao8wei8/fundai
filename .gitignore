@@ -51,17 +51,6 @@ env/
 .*.swp
 .DS_Store
 
-# IDE temporary files
-.trae/
-
-# Databases
-data/*.db
-data/*.db-journal
-data/*.sqlite
-data/*.sqlite3
-*.sqlite
-*.sqlite3
-
 # Logs
 *.log
 logs/
