@@ -1,0 +1,164 @@
+# =============================================================================
+# Fund AI - Python.gitignore
+# =============================================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+venv/
+.venv/
+env/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+*.manifest
+*.spec
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+.*.swp
+.DS_Store
+
+# IDE temporary files
+.trae/
+
+# Databases
+data/*.db
+data/*.db-journal
+data/*.sqlite
+data/*.sqlite3
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+var/log/
+
+# Environment variables (contain sensitive data)
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.bak
+*.backup
+*.old
+*~
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+*.pid
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+
+# Node.js (if applicable)
+node_modules/
+package-lock.json
+
+# Byte-compiled / optimized / DLL files
+*.class
+*.com
+*.dll
+*.exe
+*.o
+*.ko
+*.so.*
+*.dylib
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+.downloads/
+.install/
+MANIFEST
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE specific files
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Misc
+*.bak
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
