@@ -30,6 +30,9 @@ def generate():
             }
         })
     except Exception as e:
+        print(f"文案生成错误: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @copy_bp.route('/formats')

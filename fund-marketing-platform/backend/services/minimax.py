@@ -125,12 +125,21 @@ class MiniMaxService:
             ]}
             
             resp = requests.post(MINIMAX_API, headers=headers, json=data, timeout=30)
-            if resp.status_code == 200:
-                result = resp.json()
-                content = result.get("choices", [{}])[0].get("messages", [{}])[0].get("content", "")
-                if content:
-                    return content.strip()
+            resp.raise_for_status()  # 检查HTTP状态码
+            
+            result = resp.json()
+            content = result.get("choices", [{}])[0].get("messages", [{}])[0].get("content", "")
+            if content:
+                return content.strip()
+        except requests.exceptions.Timeout:
+            print(f"MiniMax API超时: {MINIMAX_API}")
+        except requests.exceptions.ConnectionError as e:
+            print(f"MiniMax API连接失败: {e}")
+        except requests.exceptions.HTTPError as e:
+            print(f"MiniMax API HTTP错误: {e}")
         except Exception as e:
-            print(f"MiniMax API失败: {e}")
+            print(f"MiniMax API未知错误: {e}")
         
+        # 降级策略：使用模板生成
+        print("使用模板生成文案作为降级方案")
         return cls.generate_copy(fund_info, selling_points, format_type, style)
