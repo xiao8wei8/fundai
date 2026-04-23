@@ -1915,52 +1915,16 @@
             </div>
             <div class="card-body">
               <div class="sp-list" id="spList">
-                <div class="sp-item sel" onclick="toggleSP(this)">
-                  <div class="sp-check">✓</div>
-                  <div class="sp-body">
-                    <div class="sp-title">近1年收益 <strong>+28.53%</strong>，大幅跑赢同类平均</div>
-                    <div class="sp-sub">收益率显著领先市场同类基金</div>
-                    <div class="sp-src">📊 天天基金 · 近1年收益率</div>
-                  </div>
-                  <div class="sp-actions">
-                    <button class="sp-btn str" onclick="event.stopPropagation();strAdj(this,'+')">强化</button>
-                    <button class="sp-btn" onclick="event.stopPropagation();strAdj(this,'-')">弱化</button>
-                  </div>
-                </div>
-                <div class="sp-item sel" onclick="toggleSP(this)">
-                  <div class="sp-check">✓</div>
-                  <div class="sp-body">
-                    <div class="sp-title">夏普比率达 <strong>1.82</strong>，风险调整后收益出色</div>
-                    <div class="sp-sub">每承担一单位风险，获得超额回报</div>
-                    <div class="sp-src">📊 天天基金 · 风险指标</div>
-                  </div>
-                  <div class="sp-actions">
-                    <button class="sp-btn str" onclick="event.stopPropagation();strAdj(this,'+')">强化</button>
-                    <button class="sp-btn" onclick="event.stopPropagation();strAdj(this,'-')">弱化</button>
-                  </div>
-                </div>
-                <div class="sp-item sel" onclick="toggleSP(this)">
-                  <div class="sp-check">✓</div>
-                  <div class="sp-body">
-                    <div class="sp-title">基金经理谢治宇，从业 <strong>15年</strong>，资深老将</div>
-                    <div class="sp-sub">管理该基金超过10年，长期业绩稳健</div>
-                    <div class="sp-src">📊 天天基金 · 基金经理信息</div>
-                  </div>
-                  <div class="sp-actions">
-                    <button class="sp-btn str" onclick="event.stopPropagation();strAdj(this,'+')">强化</button>
-                    <button class="sp-btn" onclick="event.stopPropagation();strAdj(this,'-')">弱化</button>
-                  </div>
-                </div>
-                <div class="sp-item" onclick="toggleSP(this)">
+                <div class="sp-item">
                   <div class="sp-check"></div>
                   <div class="sp-body">
-                    <div class="sp-title">近3年最大回撤 <strong>-15.3%</strong>，回撤控制优于同类</div>
-                    <div class="sp-sub">市场调整时回撤更小，持有体验更佳</div>
-                    <div class="sp-src">📊 天天基金 · 风险指标</div>
+                    <div class="sp-title">请先搜索基金</div>
+                    <div class="sp-sub">搜索基金后将自动生成真实卖点</div>
+                    <div class="sp-src">📊 系统提示</div>
                   </div>
                   <div class="sp-actions">
-                    <button class="sp-btn str" onclick="event.stopPropagation();strAdj(this,'+')">强化</button>
-                    <button class="sp-btn" onclick="event.stopPropagation();strAdj(this,'-')">弱化</button>
+                    <button class="sp-btn" disabled>强化</button>
+                    <button class="sp-btn" disabled>弱化</button>
                   </div>
                 </div>
               </div>
@@ -2777,12 +2741,10 @@
     const selected = [];
     document.querySelectorAll('.sp-item.sel').forEach(item => {
       const titleEl = item.querySelector('.sp-title');
-      const subEl = item.querySelector('.sp-sub');
       if (titleEl) {
-        selected.push({
-          title: titleEl.innerHTML,
-          desc: subEl ? subEl.innerText : ''
-        });
+        // 移除HTML标签，只保留纯文本
+        const titleText = titleEl.textContent.trim();
+        selected.push(titleText);
       }
     });
     return selected;
@@ -2851,7 +2813,7 @@
     `;
     
     try {
-      const resp = await fetch(`${API_BASE}/copy/generate`, {
+      const resp = await fetch(`${API_BASE}/fund/copywriting`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2868,13 +2830,17 @@
       btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> AI 生成文案';
       
       if (data.success && data.data) {
+        // 将\n替换为<br>标签，将*text*转换为<strong>标签
+        const formattedContent = data.data.content
+          .replace(/\n/g, '<br>')
+          .replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
         box.innerHTML = `
           <div class="copy-toolbar">
             <button class="copy-act" onclick="genCopy()">🔄 重写</button>
             <button class="copy-act" onclick="doEdit()">✏️ 编辑</button>
             <button class="copy-act pri" onclick="doCopy()">📋 复制</button>
           </div>
-          <div class="copy-text">${data.data.content}</div>
+          <div class="copy-text">${formattedContent}</div>
         `;
         copyReady = true;
         showToast('文案生成成功！', 'ok');
@@ -2891,7 +2857,12 @@
 
   function doEdit() {
     const box = document.getElementById('copyBox');
-    const text = box.querySelector('.copy-text').innerText.replace(/\*基金有风险[\s\S]*/, '').trim();
+    // 获取纯文本内容，将<br>替换为\n，移除HTML标签
+    const text = box.querySelector('.copy-text').innerHTML
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\*基金有风险[\s\S]*/, '')
+      .trim();
     document.getElementById('editTa').value = text;
     document.getElementById('copyOutput').style.display = 'none';
     document.getElementById('editMode').style.display = 'block';
@@ -2904,7 +2875,11 @@
 
   function saveEdit() {
     const text = document.getElementById('editTa').value;
-    document.getElementById('copyBox').querySelector('.copy-text').innerHTML = text + '<br><br><span style="font-size:11px;color:var(--text-muted);">*基金有风险，投资需谨慎...</span>';
+    // 将换行转换为<br>标签，将*text*转换为<strong>标签
+    const formattedText = text
+      .replace(/\n/g, '<br>')
+      .replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
+    document.getElementById('copyBox').querySelector('.copy-text').innerHTML = formattedText + '<br><br><span style="font-size:11px;color:var(--text-muted);">*基金有风险，投资需谨慎...</span>';
     document.getElementById('copyOutput').style.display = 'block';
     document.getElementById('editMode').style.display = 'none';
     showToast('文案已保存', 'ok');
@@ -3248,16 +3223,16 @@
     document.getElementById('sFundRisk').textContent = f.risk || 'R3 中风险';
     document.getElementById('sFundCo').textContent = f.company || f.co || '—';
     const dY1 = document.getElementById('dY1');
-    dY1.textContent = f.y1 || '—';
-    dY1.className = 'data-item-val ' + (f.y1 && f.y1.startsWith('+') ? 'up' : (f.y1 && f.y1.startsWith('-') ? 'down' : ''));
+    dY1.textContent = f.yield_1y || f.y1 || '—';
+    dY1.className = 'data-item-val ' + ((f.yield_1y || f.y1) && (f.yield_1y || f.y1).startsWith('+') ? 'up' : ((f.yield_1y || f.y1) && (f.yield_1y || f.y1).startsWith('-') ? 'down' : ''));
     const dY3 = document.getElementById('dY3');
-    dY3.textContent = f.y3 || '—';
-    dY3.className = 'data-item-val ' + (f.y3 && f.y3.startsWith('+') ? 'up' : (f.y3 && f.y3.startsWith('-') ? 'down' : ''));
+    dY3.textContent = f.yield_3y || f.y3 || '—';
+    dY3.className = 'data-item-val ' + ((f.yield_3y || f.y3) && (f.yield_3y || f.y3).startsWith('+') ? 'up' : ((f.yield_3y || f.y3) && (f.yield_3y || f.y3).startsWith('-') ? 'down' : ''));
     document.getElementById('dRank').textContent = f.rank || '—';
     document.getElementById('dSharpe').textContent = f.sharpe || '—';
     const dDD = document.getElementById('dDD');
-    dDD.textContent = f.dd || '—';
-    dDD.className = 'data-item-val ' + (f.dd && parseFloat(f.dd) < -30 ? 'down' : '');
+    dDD.textContent = f.dd || f.drawdown || '—';
+    dDD.className = 'data-item-val ' + ((f.dd || f.drawdown) && parseFloat(f.dd || f.drawdown) < -30 ? 'down' : '');
     document.getElementById('dMgr').textContent = f.manager || f.mgr || '—';
     showToast(`已切换至 ${f.name}`, 'ok');
     updateFundChart(f.code);
@@ -3329,41 +3304,52 @@
     const spList = document.getElementById('spList');
     if (!spList) return;
 
+    console.log('generateSellingPoints called with fund:', fund);
+
     const points = [];
 
-    if (fund.y1 && fund.y1 !== '—' && fund.y1.startsWith('+')) {
+    // 近1年收益
+    const y1 = fund.y1 || fund.yield_1y;
+    if (y1 && y1 !== '—' && y1.startsWith('+')) {
       points.push({
-        title: `近1年收益 <strong>${fund.y1}</strong>，大幅跑赢同类平均`,
+        title: `近1年收益 <strong>${y1}</strong>，大幅跑赢同类平均`,
         sub: '收益率显著领先市场同类基金',
         src: '📊 东方财富 · 近1年收益率'
       });
     }
 
-    if (fund.y3 && fund.y3 !== '—' && fund.y3.startsWith('+')) {
+    // 近3年收益
+    const y3 = fund.y3 || fund.yield_3y;
+    if (y3 && y3 !== '—' && y3.startsWith('+')) {
       points.push({
-        title: `近3年收益 <strong>${fund.y3}</strong>，长期表现稳健`,
+        title: `近3年收益 <strong>${y3}</strong>，长期表现稳健`,
         sub: '穿越牛熊，长期收益可观',
         src: '📊 东方财富 · 近3年收益率'
       });
     }
 
-    if (fund.y6m && fund.y6m !== '—' && fund.y6m.startsWith('+')) {
+    // 近6个月收益
+    const y6m = fund.y6m || fund.yield_6m;
+    if (y6m && y6m !== '—' && y6m.startsWith('+') && y6m !== '+0%') {
       points.push({
-        title: `近6个月收益 <strong>${fund.y6m}</strong>，近期表现强劲`,
+        title: `近6个月收益 <strong>${y6m}</strong>，近期表现强劲`,
         sub: '短期收益表现出色',
         src: '📊 东方财富 · 近6个月收益率'
       });
     }
 
-    if (fund.y3m && fund.y3m !== '—' && fund.y3m.startsWith('+')) {
+    // 近3个月收益
+    const y3m = fund.y3m || fund.yield_3m;
+    if (y3m && y3m !== '—' && y3m.startsWith('+') && y3m !== '+0%') {
       points.push({
-        title: `近3个月收益 <strong>${fund.y3m}</strong>，近期收益领先`,
+        title: `近3个月收益 <strong>${y3m}</strong>，近期收益领先`,
         sub: '短期收益表现良好',
         src: '📊 东方财富 · 近3个月收益率'
       });
     }
 
-    if (fund.sharpe && fund.sharpe !== '—' && parseFloat(fund.sharpe) > 1) {
+    // 夏普比率
+    if (fund.sharpe && fund.sharpe !== '—' && parseFloat(fund.sharpe) > 0) {
       points.push({
         title: `夏普比率达 <strong>${fund.sharpe}</strong>，风险调整后收益出色`,
         sub: '每承担一单位风险，获得超额回报',
@@ -3371,14 +3357,17 @@
       });
     }
 
-    if (fund.dd && fund.dd !== '—' && parseFloat(fund.dd) > -30) {
+    // 最大回撤
+    const dd = fund.dd || fund.drawdown;
+    if (dd && dd !== '—' && parseFloat(dd) > -30) {
       points.push({
-        title: `近3年最大回撤 <strong>${fund.dd}</strong>，回撤控制优于同类`,
+        title: `近3年最大回撤 <strong>${dd}</strong>，回撤控制优于同类`,
         sub: '市场调整时回撤更小，持有体验更佳',
         src: '📊 东方财富 · 风险指标'
       });
     }
 
+    // 基金经理
     if ((fund.manager || fund.mgr) && fund.manager !== '—') {
       points.push({
         title: `基金经理 <strong>${fund.manager || fund.mgr}</strong>，专业可靠`,
@@ -3387,6 +3376,7 @@
       });
     }
 
+    // 排名
     if (fund.rank && fund.rank !== '—' && !fund.rank.includes('—')) {
       const rankNum = parseFloat(fund.rank.replace('前', '').replace('%', ''));
       if (rankNum <= 20) {
@@ -3398,6 +3388,7 @@
       }
     }
 
+    // 基金公司
     if (fund.company || fund.co) {
       points.push({
         title: `基金管理人 <strong>${fund.company || fund.co}</strong>`,
@@ -3406,6 +3397,7 @@
       });
     }
 
+    // 热点卖点
     if (fund.hotspots && fund.hotspots.length > 0) {
       fund.hotspots.forEach(h => {
         if (!points.find(p => p.title.includes(h.title))) {
@@ -3418,6 +3410,7 @@
       });
     }
 
+    // 默认卖点
     if (points.length === 0) {
       points.push({
         title: `${fund.name || '该基金'}值得推荐`,
@@ -3426,6 +3419,9 @@
       });
     }
 
+    console.log('Generated points:', points);
+
+    // 生成卖点HTML
     spList.innerHTML = points.map((p, i) => `
       <div class="sp-item ${i < 3 ? 'sel' : ''}" onclick="toggleSP(this)">
         <div class="sp-check">${i < 3 ? '✓' : ''}</div>
@@ -3442,6 +3438,7 @@
     `).join('');
 
     updateSPCount();
+    console.log('Selling points generated successfully');
   }
 
   function autoSelectHotspots(fund) {
@@ -3515,6 +3512,21 @@
 
     // Update chart
     updateFundChart(code);
+
+    // Generate selling points
+    const fund = {
+      name: name,
+      code: code,
+      type: typeText,
+      company: co,
+      y1: y1,
+      y3: y3,
+      rank: rank,
+      sharpe: sharpe,
+      dd: dd,
+      manager: mgr
+    };
+    generateSellingPoints(fund);
 
     // Reset generation states
     copyReady = false; imgReady = false;
@@ -3631,9 +3643,8 @@
   let selectedFundData = null;
   let addingToMyFunds = false;
   let searchTimeout = null;
-  const API_BASE = window.location.pathname.startsWith('/fundai')
-      ? '/fundai/api'
-      : '/api';
+  // 直接指向后端服务地址
+  const API_BASE = 'http://localhost:5002/api';
   const EASTMONEY_FUND_LIST_URL = 'https://fund.eastmoney.com/js/fundcode_search.js';
   const EASTMONEY_PINGZHONG_BASE = 'https://fund.eastmoney.com/pingzhongdata';
   let eastmoneyFundList = null;
@@ -3675,7 +3686,7 @@
       y3m: d.yield_3m || '—',
       rank: d.rank ? `前${d.rank}%` : '—',
       sharpe: d.sharpe || '—',
-      dd: d.drawdown ? String(d.drawdown).replace('.', '-') + '%' : '—',
+      dd: d.drawdown || '—',
       manager: d.manager || '—',
       nav: d.nav || '—',
       nav_date: d.nav_date || '—',
@@ -3998,8 +4009,12 @@
     const nowVal = last && Number(last.y);
     const p1 = findNearestValueByTime(pts, nowTs - 365 * 24 * 3600 * 1000);
     const p3 = findNearestValueByTime(pts, nowTs - 3 * 365 * 24 * 3600 * 1000);
+    const p6m = findNearestValueByTime(pts, nowTs - 180 * 24 * 3600 * 1000);
+    const p3m = findNearestValueByTime(pts, nowTs - 90 * 24 * 3600 * 1000);
     const y1 = p1 && Number.isFinite(nowVal) && Number.isFinite(Number(p1.y)) && Number(p1.y) > 0 ? (nowVal / Number(p1.y) - 1) : null;
     const y3 = p3 && Number.isFinite(nowVal) && Number.isFinite(Number(p3.y)) && Number(p3.y) > 0 ? (nowVal / Number(p3.y) - 1) : null;
+    const y6m = p6m && Number.isFinite(nowVal) && Number.isFinite(Number(p6m.y)) && Number(p6m.y) > 0 ? (nowVal / Number(p6m.y) - 1) : null;
+    const y3m = p3m && Number.isFinite(nowVal) && Number.isFinite(Number(p3m.y)) && Number(p3m.y) > 0 ? (nowVal / Number(p3m.y) - 1) : null;
 
     const w1 = pts.filter(p => p && p.x >= nowTs - 365 * 24 * 3600 * 1000).map(p => Number(p.y)).filter(Number.isFinite);
     const mdd1 = calcMaxDrawdown(w1);
@@ -4019,6 +4034,8 @@
       company: '',
       y1: fmtPct(y1),
       y3: fmtPct(y3),
+      y6m: fmtPct(y6m),
+      y3m: fmtPct(y3m),
       rank: '—',
       sharpe: sharpe1 === null ? '—' : Number(sharpe1).toFixed(2),
       dd: mdd1 === null ? '—' : fmtPct(mdd1, 2),
@@ -4044,6 +4061,8 @@
           </div>
           <div class="flist-yield u">✓ 已选择</div>`;
         showToast(`已选择: ${f.name}`, 'ok');
+        applyFundToUI(f);
+        generateSellingPoints(f);
         return;
       }
     } catch (e) {
@@ -4062,6 +4081,8 @@
         </div>
         <div class="flist-yield u">✓ 已选择</div>`;
       showToast(`已选择: ${f.name}`, 'ok');
+      applyFundToUI(f);
+      generateSellingPoints(f);
     } catch (e) {
       useDemoFundData(fundCode, el);
     }
@@ -4096,6 +4117,10 @@
       </div>
       <div class="flist-yield u">✓ 已选择</div>`;
     showToast(`已选择: ${selectedFundData.name}`, 'ok');
+    
+    // Apply fund data to UI and generate selling points
+    applyFundToUI(selectedFundData);
+    generateSellingPoints(selectedFundData);
   }
 
   let mainSearchTimer = null;
@@ -4145,10 +4170,11 @@
         if (nonce !== lastSelectNonce) return;
         input.value = `${f.name}（${f.code}）`;
         applyFundToUI(f);
+        generateSellingPoints(f);
       } catch (e2) {
         const demo = demoFunds.find(x => x.code === code);
         if (demo) {
-          applyFundToUI({
+          const fundData = {
             name: demo.name,
             code: demo.code,
             type: demo.type,
@@ -4160,7 +4186,9 @@
             sharpe: '—',
             dd: '—',
             manager: '—'
-          });
+          };
+          applyFundToUI(fundData);
+          generateSellingPoints(fundData);
         } else {
           showToast('加载失败，请稍后重试', '');
         }

@@ -1,4 +1,4 @@
-"""MiniMax AI 文案生成服务"""
+"""MiniMax AI 文案生成服务 - 使用Anthropic兼容API"""
 import requests
 import json
 import sys
@@ -7,8 +7,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from config import Config
 
-MINIMAX_TOKEN = Config.MINIMAX_TOKEN
-MINIMAX_API = Config.MINIMAX_API
+ANTHROPIC_BASE_URL = Config.ANTHROPIC_BASE_URL
+ANTHROPIC_AUTH_TOKEN = Config.ANTHROPIC_AUTH_TOKEN
+ANTHROPIC_MODEL = Config.ANTHROPIC_MODEL
+API_TIMEOUT = Config.API_TIMEOUT_MS / 1000.0
 
 TEMPLATES = {
     "朋友圈文案": """📈 {name}
@@ -96,8 +98,8 @@ class MiniMaxService:
     
     @classmethod
     def generate_with_ai(cls, fund_info, selling_points, format_type, style):
-        """调用MiniMax API生成"""
-        prompt = f"""请为基金"{fund_info.get('name', '')}"生成一段{format_type}风格的营销文案。
+        """调用MiniMax Anthropic兼容API生成文案"""
+        user_prompt = f"""请为基金"{fund_info.get('name', '')}"生成一段{format_type}风格的营销文案。
 
 基金信息：
 - 代码：{fund_info.get('code', '')}
@@ -110,35 +112,68 @@ class MiniMaxService:
 """
         for sp in (selling_points or []):
             if isinstance(sp, dict):
-                prompt += f"- {sp.get('title', '')}: {sp.get('desc', '')}\n"
+                user_prompt += f"- {sp.get('title', '')}: {sp.get('desc', '')}\n"
             else:
-                prompt += f"- {sp}\n"
+                user_prompt += f"- {sp}\n"
         
-        prompt += """
+        user_prompt += """
 要求：专业但不生硬，突出业绩，提醒风险，字数适中。直接输出文案，不要markdown格式。"""
         
         try:
-            headers = {"Authorization": f"Bearer {MINIMAX_TOKEN}", "Content-Type": "application/json"}
-            data = {"model": "abab6.5s-chat", "tokens_to_generate": 512, "messages": [
-                {"role": "system", "content": "你是基金营销文案专家。"},
-                {"role": "user", "content": prompt}
-            ]}
+            # 使用Anthropic兼容的API格式
+            api_url = f"{ANTHROPIC_BASE_URL}/v1/messages"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {ANTHROPIC_AUTH_TOKEN}",
+                "x-api-key": ANTHROPIC_AUTH_TOKEN
+            }
             
-            resp = requests.post(MINIMAX_API, headers=headers, json=data, timeout=30)
-            resp.raise_for_status()  # 检查HTTP状态码
+            data = {
+                "model": ANTHROPIC_MODEL,
+                "messages": [
+                    {"role": "user", "content": user_prompt}
+                ],
+                "max_tokens": 512,
+                "temperature": 0.7
+            }
+            
+            print(f"调用API: {api_url}")
+            resp = requests.post(api_url, headers=headers, json=data, timeout=API_TIMEOUT)
+            resp.raise_for_status()
             
             result = resp.json()
-            content = result.get("choices", [{}])[0].get("messages", [{}])[0].get("content", "")
-            if content:
-                return content.strip()
+            print(f"API响应: {result}")
+            
+            # 检查API是否成功
+            base_resp = result.get("base_resp", {})
+            if base_resp.get("status_code", 0) != 0:
+                error_msg = base_resp.get("status_msg", "未知错误")
+                print(f"API错误: {error_msg}")
+            else:
+                # 解析MiniMax的Anthropic兼容API格式
+                content_blocks = result.get("content", [])
+                for block in content_blocks:
+                    # 查找text类型的块（跳过thinking块）
+                    if block.get("type") == "text" and block.get("text"):
+                        reply = block.get("text", "")
+                        if reply:
+                            return reply.strip()
+            
+            # 备用解析方式
+            if "error" in result:
+                error_msg = result["error"].get("message", "未知错误")
+                print(f"API错误: {error_msg}")
+                
         except requests.exceptions.Timeout:
-            print(f"MiniMax API超时: {MINIMAX_API}")
+            print(f"API超时: {api_url}")
         except requests.exceptions.ConnectionError as e:
-            print(f"MiniMax API连接失败: {e}")
+            print(f"API连接失败: {e}")
         except requests.exceptions.HTTPError as e:
-            print(f"MiniMax API HTTP错误: {e}")
+            print(f"API HTTP错误: {e}")
         except Exception as e:
-            print(f"MiniMax API未知错误: {e}")
+            print(f"API未知错误: {e}")
+            import traceback
+            traceback.print_exc()
         
         # 降级策略：使用模板生成
         print("使用模板生成文案作为降级方案")
