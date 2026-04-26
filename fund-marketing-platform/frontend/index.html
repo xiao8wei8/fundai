@@ -3673,12 +3673,14 @@
   }
 
   async function loadFundFromBackend(code) {
-    const result = await fetchFromBackend(`${API_BASE}/fund/${code}/full`);
+    const result = await fetchFromBackend(`${API_BASE}/fund/${code}/full_plus`);
     if (!result) return null;
     
     const d = result.detail;
     const history = result.history || [];
     const hotspots = result.hotspots || [];
+    const rankData = result.rank || null;
+    const rankText = (rankData && rankData.rank_1y) ? rankData.rank_1y : (d.rank ? `前${d.rank}%` : '—');
     
     return {
       name: d.name,
@@ -3690,7 +3692,7 @@
       y3: d.yield_3y || '—',
       y6m: d.yield_6m || '—',
       y3m: d.yield_3m || '—',
-      rank: d.rank ? `前${d.rank}%` : '—',
+      rank: rankText,
       sharpe: d.sharpe || '—',
       dd: d.drawdown || '—',
       manager: d.manager || '—',

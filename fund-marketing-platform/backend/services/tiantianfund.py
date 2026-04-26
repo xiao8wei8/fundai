@@ -1,6 +1,7 @@
 """天天基金数据服务 - 获取同类排名和业绩表现对比"""
 import requests
 import re
+import html
 from datetime import datetime
 import sys
 import os
@@ -35,14 +36,25 @@ class TiantianFundService:
                 'Referer': 'https://fund.eastmoney.com/'
             }
             resp = requests.get(url, headers=headers, timeout=10)
-            text = resp.text
+            resp.encoding = resp.apparent_encoding or resp.encoding
+            raw = resp.text
+            text = html.unescape(raw)
+            text = re.sub(r'<script[\s\S]*?</script>', ' ', text, flags=re.IGNORECASE)
+            text = re.sub(r'<style[\s\S]*?</style>', ' ', text, flags=re.IGNORECASE)
+            text = re.sub(r'<[^>]+>', ' ', text)
+            text = text.replace('\xa0', ' ')
+            text = re.sub(r'\s+', ' ', text)
             
             result = {
                 'code': code,
+                'rank_1w': '',
                 'rank_1y': '',
                 'rank_3y': '',
                 'rank_6m': '',
                 'rank_1m': '',
+                'rank_3m': '',
+                'rank_ytd': '',
+                'rank_2y': '',
                 'rank_type': '',
                 'total_funds': '',
                 'peer_funds': []
@@ -63,9 +75,26 @@ class TiantianFundService:
                     result[key] = f"{match.group(1)}/{match.group(2)}"
                     if not result['total_funds']:
                         result['total_funds'] = match.group(2)
+
+            if not result.get('rank_1y'):
+                seg_match = re.search(r'同类排名\s*(.*?)(四分位排名|累计收益率走势|选择时间|$)', text)
+                if seg_match:
+                    seg = seg_match.group(1)
+                    pairs = re.findall(r'(\d{1,6})\s*\|\s*(\d{1,6})', seg)
+                    if len(pairs) >= 8:
+                        result['rank_1w'] = f"{pairs[0][0]}/{pairs[0][1]}"
+                        result['rank_1m'] = f"{pairs[1][0]}/{pairs[1][1]}"
+                        result['rank_3m'] = f"{pairs[2][0]}/{pairs[2][1]}"
+                        result['rank_6m'] = f"{pairs[3][0]}/{pairs[3][1]}"
+                        result['rank_ytd'] = f"{pairs[4][0]}/{pairs[4][1]}"
+                        result['rank_1y'] = f"{pairs[5][0]}/{pairs[5][1]}"
+                        result['rank_2y'] = f"{pairs[6][0]}/{pairs[6][1]}"
+                        result['rank_3y'] = f"{pairs[7][0]}/{pairs[7][1]}"
+                        if not result['total_funds']:
+                            result['total_funds'] = pairs[5][1]
             
             # 提取基金类型
-            type_match = re.search(r'基金类型.*?>([^<]+)<', text)
+            type_match = re.search(r'基金类型.*?>([^<]+)<', raw)
             if type_match:
                 result['rank_type'] = type_match.group(1).strip()
             
