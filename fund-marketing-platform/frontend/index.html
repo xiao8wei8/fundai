@@ -3643,8 +3643,14 @@
   let selectedFundData = null;
   let addingToMyFunds = false;
   let searchTimeout = null;
-  // 直接指向后端服务地址
-  const API_BASE = 'http://localhost:5002/api';
+  const API_BASE = (window.__FUNDAI_API_BASE && String(window.__FUNDAI_API_BASE)) || (() => {
+    const origin = window.location.origin;
+    let p = window.location.pathname || '/';
+    if (p.endsWith('/')) p = p.slice(0, -1);
+    const last = p.split('/').pop() || '';
+    if (last.includes('.')) p = p.replace(/\/[^/]*$/, '');
+    return `${origin}${p}/api`;
+  })();
   const EASTMONEY_FUND_LIST_URL = 'https://fund.eastmoney.com/js/fundcode_search.js';
   const EASTMONEY_PINGZHONG_BASE = 'https://fund.eastmoney.com/pingzhongdata';
   let eastmoneyFundList = null;
